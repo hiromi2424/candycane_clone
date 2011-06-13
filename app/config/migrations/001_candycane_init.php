@@ -103,10 +103,12 @@ class M4df425b13f9c49e2ba0f8520cbdd56cb extends CakeMigration {
 					'tableParameters' => array('charset' => 'utf8', 'collate' => 'utf8_unicode_ci', 'engine' => 'InnoDB'),
 				),
 				'changesets_issues' => array(
-					'changeset_id' => array('type' => 'integer', 'null' => false, 'default' => NULL, 'key' => 'primary'),
-					'issue_id' => array('type' => 'integer', 'null' => false, 'default' => NULL, 'key' => 'primary'),
+					'id' => array('type' => 'integer', 'null' => false, 'default' => NULL, 'key' => 'primary'),
+					'changeset_id' => array('type' => 'integer', 'null' => false, 'default' => NULL),
+					'issue_id' => array('type' => 'integer', 'null' => false, 'default' => NULL),
 					'indexes' => array(
 						'changesets_issues_ids' => array('column' => array('changeset_id', 'issue_id'), 'unique' => 1),
+						'PRIMARY' => array('column' => 'id', 'unique' => 1),
 					),
 					'tableParameters' => array('charset' => 'utf8', 'collate' => 'utf8_unicode_ci', 'engine' => 'InnoDB'),
 				),
@@ -144,16 +146,20 @@ class M4df425b13f9c49e2ba0f8520cbdd56cb extends CakeMigration {
 					'tableParameters' => array('charset' => 'utf8', 'collate' => 'utf8_unicode_ci', 'engine' => 'InnoDB'),
 				),
 				'custom_fields_projects' => array(
+					'id' => array('type' => 'integer', 'null' => false, 'default' => NULL, 'key' => 'primary'),
 					'custom_field_id' => array('type' => 'integer', 'null' => false, 'default' => '0'),
 					'project_id' => array('type' => 'integer', 'null' => false, 'default' => '0'),
 					'indexes' => array(
+						'PRIMARY' => array('column' => 'id', 'unique' => 1),
 					),
 					'tableParameters' => array('charset' => 'utf8', 'collate' => 'utf8_unicode_ci', 'engine' => 'InnoDB'),
 				),
 				'custom_fields_trackers' => array(
+					'id' => array('type' => 'integer', 'null' => false, 'default' => NULL, 'key' => 'primary'),
 					'custom_field_id' => array('type' => 'integer', 'null' => false, 'default' => '0'),
 					'tracker_id' => array('type' => 'integer', 'null' => false, 'default' => '0'),
 					'indexes' => array(
+						'PRIMARY' => array('column' => 'id', 'unique' => 1),
 					),
 					'tableParameters' => array('charset' => 'utf8', 'collate' => 'utf8_unicode_ci', 'engine' => 'InnoDB'),
 				),
@@ -335,9 +341,11 @@ class M4df425b13f9c49e2ba0f8520cbdd56cb extends CakeMigration {
 					'tableParameters' => array('charset' => 'utf8', 'collate' => 'utf8_unicode_ci', 'engine' => 'InnoDB'),
 				),
 				'plugin_schema_info' => array(
+					'id' => array('type' => 'integer', 'null' => false, 'default' => NULL, 'key' => 'primary'),
 					'plugin_name' => array('type' => 'string', 'null' => true, 'default' => NULL, 'collate' => 'utf8_unicode_ci', 'charset' => 'utf8'),
 					'version' => array('type' => 'integer', 'null' => true, 'default' => NULL),
 					'indexes' => array(
+						'PRIMARY' => array('column' => 'id', 'unique' => 1),
 					),
 					'tableParameters' => array('charset' => 'utf8', 'collate' => 'utf8_unicode_ci', 'engine' => 'MyISAM'),
 				),
@@ -359,9 +367,11 @@ class M4df425b13f9c49e2ba0f8520cbdd56cb extends CakeMigration {
 					'tableParameters' => array('charset' => 'utf8', 'collate' => 'utf8_unicode_ci', 'engine' => 'InnoDB'),
 				),
 				'projects_trackers' => array(
+					'id' => array('type' => 'integer', 'null' => false, 'default' => NULL, 'key' => 'primary'),
 					'project_id' => array('type' => 'integer', 'null' => false, 'default' => '0', 'key' => 'index'),
 					'tracker_id' => array('type' => 'integer', 'null' => false, 'default' => '0'),
 					'indexes' => array(
+						'PRIMARY' => array('column' => 'id', 'unique' => 1),
 						'projects_trackers_project_id' => array('column' => 'project_id', 'unique' => 0),
 					),
 					'tableParameters' => array('charset' => 'utf8', 'collate' => 'utf8_unicode_ci', 'engine' => 'InnoDB'),
@@ -621,18 +631,34 @@ class M4df425b13f9c49e2ba0f8520cbdd56cb extends CakeMigration {
  */
 	public function after($direction) {
 		if ($direction === 'up') {
-			if (!class_exists('Security')) {
-				App::import('Core', 'Security');
-			}
-
-			$User = $this->generateModel('User');
-			$User->create(array(
-				'login' => 'admin',
-				'hashed_password' => Security::hash('admin', null, true),
-			));
-			$User->save();
+			return $this->_insertRecords(CONFIGS . 'migrations' . DS . 'records.php');
 		}
 		return true;
 	}
+
+	protected function _insertRecords($file) {
+		$tables = array();
+		include $file;
+
+		$db = ConnectionManager::getDataSource($this->connection);
+		foreach ($tables as $table => &$records) {
+			$fields = array_keys(current($records));
+			foreach ($records as &$record) {
+				foreach ($record as $field => &$value) {
+					if (is_array($value)) {
+						$value = Spyc::YAMLDump($value);
+					}
+
+					if ($field === 'hashed_password' && $value !== '') {
+						$value = Security::hash($value, null, true);
+					}
+				}
+				$record = '(' . implode(',', array_map(array($db, 'value'), $record)) . ')';
+			}
+			$db->insertMulti($table, $fields, $records);
+		}
+		return $db->lastError() === null;
+	}
+
 }
 

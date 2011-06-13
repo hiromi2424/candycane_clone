@@ -2724,12 +2724,6 @@ msgstr "あなたが設定したデータベースに初期データをロード
 msgid "Click here to build your database"
 msgstr "クリックでデータベースを構築します"
 
-msgid "Delete the installation directory <strong>/app/plugins/install</strong>."
-msgstr "インストール用のディレクトリを削除してください。 <strong>/app/plugins/install</strong>"
-
-msgid "Click here to delete installation files"
-msgstr "クリックでインストール用のファイルを削除します"
-
 msgid "Installation completed successfully"
 msgstr "インストールが完了しました"
 

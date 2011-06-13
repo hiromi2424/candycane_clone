@@ -21,6 +21,16 @@ class AppController extends Controller {
 
 	public $view = 'AppTheme';
 
+	public $Setting;
 
+	public function beforeFilter() {
+		$this->_loadSettings();
+	}
+
+	protected function _loadSettings() {
+		$this->Setting = ClassRegistry::init('Setting');
+		$this->theme = strtolower($this->Setting->ui_theme);
+		$this->set('Settings', $this->Setting);
+	}
 
 }

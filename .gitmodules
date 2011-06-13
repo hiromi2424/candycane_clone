@@ -4,3 +4,9 @@
 [submodule "app/plugins/ninja"]
 	path = app/plugins/ninja
 	url = git://github.com/hiromi2424/ninja.git
+[submodule "app/plugins/collectionable"]
+	path = app/plugins/collectionable
+	url = git://github.com/hiromi2424/Collectionable.git
+[submodule "app/plugins/lazy_model"]
+	path = app/plugins/lazy_model
+	url = git://github.com/Phally/lazy_model.git
